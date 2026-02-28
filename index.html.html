@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <title>PN Kalkulator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body {
+      background: #0f172a;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #e5e7eb;
+    }
+    .app-shell {
+      max-width: 1200px;
+      margin: 2rem auto;
+    }
+    .app-card {
+      background: #020617;
+      border-radius: 1rem;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      border: 1px solid rgba(148,163,184,0.25);
+      padding: 1.5rem 1.75rem 2rem;
+    }
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .app-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+    .badge-section {
+      font-size: 0.75rem;
+      border-radius: 999px;
+      padding: 0.3rem 0.7rem;
+      background: rgba(59,130,246,0.12);
+      color: #93c5fd;
+    }
+    .mode-toggle label {
+      margin-right: 0.75rem;
+      font-size: 0.85rem;
+    }
+    .section-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #9ca3af;
+      margin-bottom: 0.35rem;
+    }
+    .card-subtle {
+      border-radius: 0.9rem;
+      border: 1px solid rgba(55,65,81,0.7);
+      background: radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 55%);
+      padding: 1.1rem 1rem;
+      margin-bottom: 1rem;
+    }
+    .results-card {
+      border-radius: 0.9rem;
+      border: 1px solid rgba(55,65,81,0.8);
+      background: rgba(15,23,42,0.9);
+      padding: 1rem 1rem 0.5rem;
+      margin-top: 1rem;
+    }
+    .results-card h6 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      color: #9ca3af;
+      margin-bottom: .35rem;
+    }
+    .table-dark-sm {
+      font-size: 0.8rem;
+    }
+    .table-dark-sm th,
+    .table-dark-sm td {
+      vertical-align: middle;
+    }
+    .pill {
+      border-radius: 999px;
+      padding: 0.1rem 0.6rem;
+      font-size: 0.7rem;
+    }
+    .pill-low { background: rgba(22,163,74,0.18); color:#bbf7d0; }
+    .pill-mid { background: rgba(245,158,11,0.18); color:#fed7aa; }
+    .pill-high{ background: rgba(220,38,38,0.23); color:#fecaca; }
+
+    .disclaimer {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-top: 1rem;
+    }
+    .nav-tabs .nav-link {
+      border-radius: 999px;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.8rem;
+    }
+    .nav-tabs {
+      border-bottom: none;
+      background: rgba(15,23,42,0.95);
+      border-radius: 999px;
+      padding: 0.2rem;
+    }
+    .nav-tabs .nav-link.active {
+      background: linear-gradient(135deg,#38bdf8,#6366f1);
+      border-color: transparent;
+      color:#0b1120;
+      font-weight: 600;
+    }
+    .spn-only { transition: opacity .15s ease; }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <div class="app-card">
+      <div class="app-header">
+        <div>
+          <div class="app-title">PN Kalkulator</div>
+          <div class="text-muted" style="font-size:0.8rem;">
+            Obliczenia orientacyjne dla żywienia pozajelitowego – fazy OIT i oddziałów niezabiegowych/chirurgicznych.
+          </div>
+        </div>
+        <div class="text-end">
+          <div class="badge-section mb-1">
+            Populacja: OIT • oddz. internistyczny • chirurgia • onkologia • gastroenterologia
+          </div>
+          <div class="mode-toggle">
+            <span class="section-label mb-0">Tryb kalkulatora</span><br>
+            <div class="btn-group btn-group-sm" role="group">
+              <input type="radio" class="btn-check" name="mode" id="modeLite" value="lite" checked>
+              <label class="btn btn-outline-info" for="modeLite">Lite – szybki dobór worka</label>
+
+              <input type="radio" class="btn-check" name="mode" id="modePro" value="pro">
+              <label class="btn btn-outline-info" for="modePro">Pro – pełne obliczenia</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <ul class="nav nav-tabs mb-3" id="mainTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="calc-tab" data-bs-toggle="tab"
+                  data-bs-target="#calc-pane" type="button" role="tab">
+            Kalkulator
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="mix-tab" data-bs-toggle="tab"
+                  data-bs-target="#mix-pane" type="button" role="tab">
+            Mieszaniny (warianty A–D)
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+        <!-- KALKULATOR -->
+        <div class="tab-pane fade show active" id="calc-pane" role="tabpanel">
+          <!-- Dane pacjenta -->
+          <div class="card-subtle mb-3">
+            <div class="section-label">Dane pacjenta</div>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Aktualna masa ciała (kg)</label>
+                <input type="number" class="form-control form-control-sm" id="weight" min="1" step="0.1">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Wzrost (cm)</label>
+                <input type="number" class="form-control form-control-sm" id="height" min="1" step="0.5">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Ryzyko Refeeding Syndrome (RS)</label>
+                <select class="form-select form-select-sm" id="rs">
+                  <option value="">Wybierz</option>
+                  <option value="low">niskie</option>
+                  <option value="moderate">umiarkowane</option>
+                  <option value="high">wysokie</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Czas żywienia w ostrej fazie (dni)</label>
+                <input type="number" class="form-control form-control-sm" id="days" min="1" max="21">
+              </div>
+            </div>
+          </div>
+
+          <!-- Kontekst kliniczny -->
+          <div class="card-subtle mb-3">
+            <div class="section-label">Kontekst kliniczny</div>
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Populacja / oddział</label>
+                <select class="form-select form-select-sm" id="population">
+                  <option value="icu">OIT / intensywna terapia</option>
+                  <option value="med">Oddział internistyczny / niezabiegowy</option>
+                  <option value="surg">Chirurgia</option>
+                  <option value="onco">Onkologia</option>
+                  <option value="gastro">Gastroenterologia</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Źródło zaleceń</label>
+                <select class="form-select form-select-sm" id="guideline">
+                  <option value="espenStd">ESPEN – standard</option>
+                  <option value="espenHigh">ESPEN – wyższe wartości (anabolizm)</option>
+                  <option value="local">Lokalne / inne (przykładowe)</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Droga podania</label>
+                <select class="form-select form-select-sm" id="route">
+                  <option value="">Wybierz</option>
+                  <option value="central">Centralna</option>
+                  <option value="peripheral">Obwodowa</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Rodzaj terapii</label>
+                <select class="form-select form-select-sm" id="therapyType">
+                  <option value="full">Całkowite PN</option>
+                  <option value="spn_icu">Uzupełniające PN (SPN)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-2 spn-only d-none">
+              <div class="col-md-3">
+                <label class="form-label">Już podane białko (g/dobę)</label>
+                <input type="number" class="form-control form-control-sm" id="currentProt" min="0" step="0.1">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Już podana energia (kcal/dobę)</label>
+                <input type="number" class="form-control form-control-sm" id="currentKcal" min="0" step="1">
+              </div>
+            </div>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <button class="btn btn-info btn-sm me-2" id="calculateBtn">Generuj</button>
+              <button class="btn btn-outline-secondary btn-sm" id="clearBtn">Wyczyść</button>
+            </div>
+            <div class="small text-muted">
+              Obliczenia dla osoby dorosłej &bull; wartości orientacyjne, nie zastępują decyzji klinicznej.
+            </div>
+          </div>
+
+          <!-- RS / BMI warning -->
+          <div id="rsWarning"></div>
+
+          <!-- Wyniki: Lite -->
+          <div class="results-card" id="liteResults" style="display:none;">
+            <h6>Tryb Lite – szybki dobór worka</h6>
+            <div class="row">
+              <div class="col-md-4">
+                <p class="mb-1"><strong>Cel na ostatni dzień fazy ostrej:</strong></p>
+                <p class="mb-1"><span class="small text-muted">Białko</span><br>
+                  <span id="liteTargetProt"></span>
+                </p>
+                <p class="mb-1"><span class="small text-muted">Energia</span><br>
+                  <span id="liteTargetKcal"></span>
+                </p>
+              </div>
+              <div class="col-md-8">
+                <p class="mb-1 small text-muted">Propozycje (pełna objętość worka) – posortowane wg zbliżenia do celu:</p>
+                <div class="table-responsive">
+                  <table class="table table-dark table-sm table-dark-sm align-middle mb-2">
+                    <thead>
+                      <tr>
+                        <th>Wariant</th>
+                        <th>Droga</th>
+                        <th>Objętość (ml)</th>
+                        <th>Białko (g)</th>
+                        <th>Energia (kcal)</th>
+                        <th>% celu białka</th>
+                        <th>% celu energii</th>
+                      </tr>
+                    </thead>
+                    <tbody id="liteTableBody"></tbody>
+                  </table>
+                </div>
+                <p class="small text-muted mb-0">
+                  Ostateczny wybór wariantu i ewentualnej modyfikacji objętości należy do lekarza prowadzącego.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wyniki: Pro -->
+          <div class="results-card" id="proResults" style="display:none;">
+            <h6>Tryb Pro – fazy żywienia i narastanie podaży</h6>
+            <p class="small mb-2">
+              Tabela pokazuje stopniowe dochodzenie do celu w zależności od ryzyka RS oraz docelową podaż na ostatni dzień.
+              W trybie SPN przedstawiana jest brakująca część do uzupełnienia (deficyt).
+            </p>
+
+            <div class="row mb-2">
+              <div class="col-md-4">
+                <p class="mb-1"><strong>Docelowa podaż (ostatni dzień):</strong></p>
+                <p class="mb-1"><span class="small text-muted">Białko</span><br>
+                  <span id="proTargetProt"></span>
+                </p>
+                <p class="mb-1"><span class="small text-muted">Energia</span><br>
+                  <span id="proTargetKcal"></span>
+                </p>
+              </div>
+              <div class="col-md-4">
+                <p class="mb-1"><strong>Parametry populacji:</strong></p>
+                <p class="mb-1 small">
+                  <span id="proPopulationInfo"></span><br>
+                  <span id="proGuidelineInfo" class="text-info"></span>
+                </p>
+              </div>
+              <div class="col-md-4">
+                <p class="mb-1"><strong>Rodzaj terapii:</strong></p>
+                <p class="mb-1 small">
+                  <span id="proTherapyInfo"></span>
+                </p>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-dark table-sm table-dark-sm align-middle mb-2">
+                <thead>
+                  <tr>
+                    <th>Doba</th>
+                    <th>Faza</th>
+                    <th>Skalowanie celu</th>
+                    <th>Białko cel (g/d)</th>
+                    <th>Energia cel (kcal/d)</th>
+                    <th>Białko PN/SPN (g/d)</th>
+                    <th>Energia PN/SPN (kcal/d)</th>
+                    <th>% celu białka</th>
+                    <th>% celu energii</th>
+                  </tr>
+                </thead>
+                <tbody id="proTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <p class="disclaimer">
+            Aplikacja ma wyłącznie charakter informacyjny, szkoleniowy i edukacyjny. Nie stanowi wyrobu medycznego ani
+            narzędzia do podejmowania decyzji klinicznych. Obliczenia bazują na przykładowych interpretacjach zaleceń
+            ESPEN oraz innych źródeł EBM; ostateczna decyzja dotycząca wyboru terapii żywieniowej należy zawsze do
+            lekarza.
+          </p>
+        </div>
+
+        <!-- MIESZANINY -->
+        <div class="tab-pane fade" id="mix-pane" role="tabpanel">
+          <div class="card-subtle">
+            <div class="section-label">Dostępne warianty mieszanin (przykład)</div>
+            <p class="small text-muted mb-2">
+              Wartości są przykładami dla mieszanin do żywienia pozajelitowego. Nazwy są neutralne (Wariant A–D) i mogą
+              zostać zastąpione konkretnymi produktami zgodnymi z lokalnym formularzem szpitalnym.
+            </p>
+            <div class="table-responsive">
+              <table class="table table-dark table-sm table-dark-sm align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nazwa wariantu</th>
+                    <th>Droga</th>
+                    <th>Objętość (ml)</th>
+                    <th>Białko (g / worek)</th>
+                    <th>Energia (kcal / worek)</th>
+                    <th>Białko / 100 ml</th>
+                    <th>Energia / 100 ml</th>
+                  </tr>
+                </thead>
+                <tbody id="mixturesTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div> <!-- /tab-content -->
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    /********************
+     * Dane mieszanin
+     ********************/
+    const MIXTURES = [
+      {
+        id: 'A',
+        name: 'Wariant A (centralny – wysokie białko)',
+        route: 'central',
+        volume: 1500,
+        proteinTotal: 75,   // g
+        kcalTotal: 1500     // kcal
+      },
+      {
+        id: 'B',
+        name: 'Wariant B (centralny – zrównoważony)',
+        route: 'central',
+        volume: 2000,
+        proteinTotal: 80,
+        kcalTotal: 2000
+      },
+      {
+        id: 'C',
+        name: 'Wariant C (obwodowy – niższa osmolarność)',
+        route: 'peripheral',
+        volume: 1500,
+        proteinTotal: 45,
+        kcalTotal: 1200
+      },
+      {
+        id: 'D',
+        name: 'Wariant D (obwodowy – wyższa energia)',
+        route: 'peripheral',
+        volume: 2000,
+        proteinTotal: 55,
+        kcalTotal: 1600
+      }
+    ];
+
+    /********************
+     * Presety zaleceń (g/kg i kcal/kg) – uproszczone
+     ********************/
+    const GUIDELINE_PRESETS = {
+      espenStd: {
+        label: 'ESPEN – standard',
+        targets: {
+          icu:  { proteinPerKg: 1.3, kcalPerKg: 21 },
+          med:  { proteinPerKg: 1.0, kcalPerKg: 25 },
+          surg: { proteinPerKg: 1.2, kcalPerKg: 27 },
+          onco: { proteinPerKg: 1.2, kcalPerKg: 30 },
+          gastro:{ proteinPerKg: 1.2, kcalPerKg: 25 }
+        }
+      },
+      espenHigh: {
+        label: 'ESPEN – wyższe wartości (faza anaboliczna / rekonwalescencja)',
+        targets: {
+          icu:  { proteinPerKg: 2.0, kcalPerKg: 30 },
+          med:  { proteinPerKg: 1.3, kcalPerKg: 30 },
+          surg: { proteinPerKg: 1.5, kcalPerKg: 30 },
+          onco: { proteinPerKg: 1.5, kcalPerKg: 32 },
+          gastro:{ proteinPerKg: 1.5, kcalPerKg: 30 }
+        }
+      },
+      local: {
+        label: 'Przykładowe wartości lokalne',
+        targets: {
+          icu:  { proteinPerKg: 1.5, kcalPerKg: 25 },
+          med:  { proteinPerKg: 1.1, kcalPerKg: 27 },
+          surg: { proteinPerKg: 1.3, kcalPerKg: 28 },
+          onco: { proteinPerKg: 1.3, kcalPerKg: 30 },
+          gastro:{ proteinPerKg: 1.3, kcalPerKg: 27 }
+        }
+      }
+    };
+
+    function getTargets(population, guidelineKey) {
+      const g = GUIDELINE_PRESETS[guidelineKey] || GUIDELINE_PRESETS.espenStd;
+      return g.targets[population] || g.targets.icu;
+    }
+
+    /********************
+     * Funkcje pomocnicze
+     ********************/
+    function calcBMI(weight, height) {
+      if (!weight || !height) return null;
+      const h = height / 100;
+      return weight / (h * h);
+    }
+
+    // Skalowanie podaży w kolejnych dobach w ostrej fazie OIT
+    function getRsScalingArray(rs, days) {
+      const arr = [];
+      const d = Math.max(1, days);
+
+      if (rs === 'high') {
+        // wys. ryzyko RS – ok. 7 dni dochodzenia do celu
+        for (let i = 1; i <= d; i++) {
+          if (i === 1) arr.push(0.15);
+          else if (i === 2) arr.push(0.3);
+          else if (i === 3) arr.push(0.45);
+          else if (i === 4) arr.push(0.6);
+          else if (i === 5) arr.push(0.75);
+          else if (i === 6) arr.push(0.9);
+          else arr.push(1.0);
+        }
+      } else if (rs === 'moderate') {
+        // umiarkowane – ok. 5 dni dochodzenia do celu
+        for (let i = 1; i <= d; i++) {
+          if (i === 1) arr.push(0.2);
+          else if (i === 2) arr.push(0.4);
+          else if (i === 3) arr.push(0.6);
+          else if (i === 4) arr.push(0.8);
+          else arr.push(1.0);
+        }
+      } else {
+        // niskie lub nieokreślone – 3 dni dochodzenia do celu
+        for (let i = 1; i <= d; i++) {
+          if (i === 1) arr.push(0.25);
+          else if (i === 2) arr.push(0.5);
+          else if (i === 3) arr.push(0.75);
+          else arr.push(1.0);
+        }
+      }
+      return arr;
+    }
+
+    function rsLabel(rs) {
+      if (rs === 'high') return 'wysokie';
+      if (rs === 'moderate') return 'umiarkowane';
+      if (rs === 'low') return 'niskie';
+      return 'nieokreślone';
+    }
+
+    function populationLabel(pop) {
+      switch (pop) {
+        case 'icu': return 'OIT / intensywna terapia';
+        case 'med': return 'Oddział internistyczny / niezabiegowy';
+        case 'surg': return 'Oddział chirurgiczny';
+        case 'onco': return 'Onkologia';
+        case 'gastro': return 'Gastroenterologia';
+        default: return pop;
+      }
+    }
+
+    function formatNumber(x, digits = 1) {
+      if (x === null || x === undefined || isNaN(x)) return '-';
+      return x.toFixed(digits).replace('.', ',');
+    }
+
+    /********************
+     * Inicjalizacja tabeli mieszanin
+     ********************/
+    function renderMixturesTable() {
+      const tbody = document.getElementById('mixturesTableBody');
+      tbody.innerHTML = '';
+      MIXTURES.forEach((m, idx) => {
+        const prot100 = m.proteinTotal / (m.volume / 100);
+        const kcal100 = m.kcalTotal / (m.volume / 100);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td>${m.name}</td>
+          <td>${m.route === 'central' ? 'centralna' : 'obwodowa'}</td>
+          <td>${m.volume}</td>
+          <td>${m.proteinTotal}</td>
+          <td>${m.kcalTotal}</td>
+          <td>${formatNumber(prot100, 2)}</td>
+          <td>${Math.round(kcal100)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /********************
+     * Ostrzeżenia RS / BMI
+     ********************/
+    function updateRsWarning() {
+      const weight = parseFloat(document.getElementById('weight').value);
+      const height = parseFloat(document.getElementById('height').value);
+      const rs = document.getElementById('rs').value;
+      const bmi = calcBMI(weight, height);
+      const container = document.getElementById('rsWarning');
+
+      let html = '';
+      if (bmi) {
+        if (bmi < 16) {
+          html += `
+            <div class="alert alert-danger py-2 mb-2">
+              <strong>BMI: ${formatNumber(bmi, 1)} kg/m².</strong> Bardzo duże ryzyko niedożywienia i zespołu
+              ponownego odżywienia – rozważ bardzo ostrożne zwiększanie podaży i częstszy monitoring.
+            </div>`;
+        } else if (bmi < 18.5) {
+          html += `
+            <div class="alert alert-warning py-2 mb-2">
+              <strong>BMI: ${formatNumber(bmi, 1)} kg/m².</strong> Możliwe zwiększone ryzyko zespołu refeeding –
+              zaleca się stopniowe zwiększanie podaży energii i białka.
+            </div>`;
+        } else {
+          html += `
+            <div class="alert alert-secondary py-2 mb-2">
+              <strong>BMI: ${formatNumber(bmi, 1)} kg/m².</strong> Wartość w zakresie niepodpowiadającym
+              ciężkiego niedożywienia, ale decyzja kliniczna wymaga pełnej oceny pacjenta.
+            </div>`;
+        }
+      }
+
+      if (rs === 'high') {
+        html += `
+          <div class="alert alert-danger py-2 mb-0">
+            <strong>Ryzyko RS: wysokie.</strong> Zalecany wolny narost podaży (ok. 7 dni), ścisła
+            kontrola elektrolitów (P, Mg, K) oraz monitorowanie tolerancji.
+          </div>`;
+      } else if (rs === 'moderate') {
+        html += `
+          <div class="alert alert-warning py-2 mb-0">
+            <strong>Ryzyko RS: umiarkowane.</strong> Rozważ 4–5 dni narastania podaży oraz kontrolę
+            elektrolitów i glikemii.
+          </div>`;
+      } else if (rs === 'low') {
+        html += `
+          <div class="alert alert-secondary py-2 mb-0">
+            <strong>Ryzyko RS: niskie.</strong> Możliwe szybsze dochodzenie do celu (ok. 3 dni), nadal z
+            zachowaniem monitorowania klinicznego.
+          </div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    /********************
+     * Tryb Lite – szybki dobór worka
+     ********************/
+    function runLite(weight, population, guidelineKey, route, therapyType, currentProt, currentKcal, rs, daysInput) {
+      const liteCard = document.getElementById('liteResults');
+      const tbody = document.getElementById('liteTableBody');
+      const targetProtSpan = document.getElementById('liteTargetProt');
+      const targetKcalSpan = document.getElementById('liteTargetKcal');
+
+      const { proteinPerKg, kcalPerKg } = getTargets(population, guidelineKey);
+
+      // skalowanie – bierzemy docelową dawkę z ostatniego dnia fazy ostrej
+      const days = Math.max(1, daysInput || 4);
+      const scalingArray = getRsScalingArray(rs || 'low', days);
+      const lastScale = scalingArray[scalingArray.length - 1] || 1;
+
+      let targetProtGr = proteinPerKg * weight * lastScale;
+      let targetKcal = kcalPerKg * weight * lastScale;
+
+      if (therapyType === 'spn_icu') {
+        targetProtGr = Math.max(targetProtGr - (currentProt || 0), 0);
+        targetKcal   = Math.max(targetKcal   - (currentKcal || 0), 0);
+      }
+
+      targetProtSpan.textContent = `${formatNumber(targetProtGr,1)} g/d`;
+      targetKcalSpan.textContent = `${Math.round(targetKcal)} kcal/d`;
+
+      const candidates = MIXTURES.filter(m => m.route === route);
+      tbody.innerHTML = '';
+
+      if (!candidates.length || targetKcal <= 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center small text-muted">
+          Brak mieszanin dla wybranej drogi lub nieokreślony cel.
+        </td></tr>`;
+        liteCard.style.display = 'block';
+        return;
+      }
+
+      const scored = candidates.map(m => {
+        const prot = m.proteinTotal;
+        const kcal = m.kcalTotal;
+        const protPct = targetProtGr > 0 ? (prot / targetProtGr * 100) : 0;
+        const kcalPct = targetKcal > 0 ? (kcal / targetKcal * 100) : 0;
+        const score = Math.abs(100 - protPct) + Math.abs(100 - kcalPct);
+        return { m, prot, kcal, protPct, kcalPct, score };
+      }).sort((a, b) => a.score - b.score).slice(0, 3);
+
+      scored.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.m.name}</td>
+          <td>${item.m.route === 'central' ? 'centralna' : 'obwodowa'}</td>
+          <td>${item.m.volume}</td>
+          <td>${item.prot}</td>
+          <td>${item.kcal}</td>
+          <td>${formatNumber(item.protPct,0)}%</td>
+          <td>${formatNumber(item.kcalPct,0)}%</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      liteCard.style.display = 'block';
+    }
+
+    /********************
+     * Tryb Pro – tabela dzień po dniu
+     ********************/
+    function runPro(weight, population, guidelineKey, therapyType, currentProt, currentKcal, rs, daysInput) {
+      const proCard = document.getElementById('proResults');
+      const tbody = document.getElementById('proTableBody');
+      const targetProtSpan = document.getElementById('proTargetProt');
+      const targetKcalSpan = document.getElementById('proTargetKcal');
+      const popInfo = document.getElementById('proPopulationInfo');
+      const guideInfo = document.getElementById('proGuidelineInfo');
+      const therapyInfo = document.getElementById('proTherapyInfo');
+
+      const { proteinPerKg, kcalPerKg } = getTargets(population, guidelineKey);
+      const guidelineLabel = GUIDELINE_PRESETS[guidelineKey]?.label || '';
+
+      const days = Math.max(1, daysInput || 4);
+      const scalingArray = getRsScalingArray(rs || 'low', days);
+
+      // cel "pełny" (bez skalowania)
+      const fullProt = proteinPerKg * weight;
+      const fullKcal = kcalPerKg * weight;
+
+      // w Pro pokazujemy cel na ostatni dzień = pełny cel
+      let targetProtGr = fullProt;
+      let targetKcal = fullKcal;
+
+      if (therapyType === 'spn_icu') {
+        targetProtGr = Math.max(fullProt - (currentProt || 0), 0);
+        targetKcal   = Math.max(fullKcal - (currentKcal || 0), 0);
+      }
+
+      targetProtSpan.textContent = `${formatNumber(targetProtGr,1)} g/d`;
+      targetKcalSpan.textContent = `${Math.round(targetKcal)} kcal/d`;
+      popInfo.textContent = `${populationLabel(population)}, masa: ${formatNumber(weight,1)} kg`;
+      guideInfo.textContent = guidelineLabel;
+      therapyInfo.textContent = therapyType === 'spn_icu'
+        ? 'Uzupełniające PN (SPN) – wartości w tabeli to deficyt do uzupełnienia.'
+        : 'Całkowite PN – wartości w tabeli obejmują całą podaż PN.';
+
+      tbody.innerHTML = '';
+
+      for (let d = 1; d <= days; d++) {
+        const scale = scalingArray[d - 1] || 1;
+        const phase =
+          d <= 4 ? 'Faza ostra OIT'
+          : d <= 7 ? 'Faza ostra przedłużona'
+          : 'Późny OIT / dalsza hospitalizacja';
+
+        let targetProtDay = fullProt * scale;
+        let targetKcalDay = fullKcal * scale;
+
+        let pnProtDay = targetProtDay;
+        let pnKcalDay = targetKcalDay;
+
+        if (therapyType === 'spn_icu') {
+          // w SPN PN pokrywa tylko deficyt (przyjmujemy liniowe narastanie udziału PN)
+          const deficitProtFull = Math.max(fullProt - (currentProt || 0), 0);
+          const deficitKcalFull = Math.max(fullKcal - (currentKcal || 0), 0);
+
+          pnProtDay = deficitProtFull * scale;
+          pnKcalDay = deficitKcalFull * scale;
+        }
+
+        const pctProt = targetProtDay > 0 ? (pnProtDay / targetProtDay * 100) : 0;
+        const pctKcal = targetKcalDay > 0 ? (pnKcalDay / targetKcalDay * 100) : 0;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${d}</td>
+          <td>${phase}</td>
+          <td>${Math.round(scale * 100)}%</td>
+          <td>${formatNumber(targetProtDay,1)}</td>
+          <td>${Math.round(targetKcalDay)}</td>
+          <td>${formatNumber(pnProtDay,1)}</td>
+          <td>${Math.round(pnKcalDay)}</td>
+          <td>${formatNumber(pctProt,0)}%</td>
+          <td>${formatNumber(pctKcal,0)}%</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      proCard.style.display = 'block';
+    }
+
+    /********************
+     * Obsługa UI
+     ********************/
+    document.addEventListener('DOMContentLoaded', () => {
+      renderMixturesTable();
+
+      const modeLiteRadio = document.getElementById('modeLite');
+      const modeProRadio = document.getElementById('modePro');
+      const liteCard = document.getElementById('liteResults');
+      const proCard = document.getElementById('proResults');
+
+      const therapyTypeSelect = document.getElementById('therapyType');
+      const spnOnlyEls = document.querySelectorAll('.spn-only');
+
+      therapyTypeSelect.addEventListener('change', () => {
+        if (therapyTypeSelect.value === 'spn_icu') {
+          spnOnlyEls.forEach(el => {
+            el.classList.remove('d-none');
+          });
+        } else {
+          spnOnlyEls.forEach(el => {
+            el.classList.add('d-none');
+          });
+        }
+      });
+
+      // Zmiana trybu – chowamy wyniki
+      modeLiteRadio.addEventListener('change', () => {
+        liteCard.style.display = 'none';
+        proCard.style.display = 'none';
+      });
+      modeProRadio.addEventListener('change', () => {
+        liteCard.style.display = 'none';
+        proCard.style.display = 'none';
+      });
+
+      // Ostrzeżenia BMI/RS
+      ['weight','height','rs'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', updateRsWarning);
+        el.addEventListener('change', updateRsWarning);
+      });
+
+      // Przycisk "Generuj"
+      document.getElementById('calculateBtn').addEventListener('click', () => {
+        const weight = parseFloat(document.getElementById('weight').value);
+        const height = parseFloat(document.getElementById('height').value);
+        const rs = document.getElementById('rs').value || 'low';
+        const daysInput = parseInt(document.getElementById('days').value || '4', 10);
+        const population = document.getElementById('population').value;
+        const guidelineKey = document.getElementById('guideline').value;
+        const route = document.getElementById('route').value;
+        const therapyType = document.getElementById('therapyType').value;
+        const currentProt = parseFloat(document.getElementById('currentProt').value || '0');
+        const currentKcal = parseFloat(document.getElementById('currentKcal').value || '0');
+
+        if (!weight || !height) {
+          alert('Uzupełnij masę ciała i wzrost.');
+          return;
+        }
+        if (!route) {
+          alert('Wybierz drogę podania (centralna / obwodowa).');
+          return;
+        }
+
+        updateRsWarning();
+
+        liteCard.style.display = 'none';
+        proCard.style.display = 'none';
+
+        if (modeLiteRadio.checked) {
+          runLite(weight, population, guidelineKey, route, therapyType, currentProt, currentKcal, rs, daysInput);
+        } else {
+          runPro(weight, population, guidelineKey, therapyType, currentProt, currentKcal, rs, daysInput);
+        }
+      });
+
+      // Przycisk "Wyczyść"
+      document.getElementById('clearBtn').addEventListener('click', () => {
+        ['weight','height','rs','days','currentProt','currentKcal'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        document.getElementById('route').value = '';
+        document.getElementById('population').value = 'icu';
+        document.getElementById('guideline').value = 'espenStd';
+        document.getElementById('therapyType').value = 'full';
+        spnOnlyEls.forEach(el => el.classList.add('d-none'));
+        document.getElementById('rsWarning').innerHTML = '';
+        liteCard.style.display = 'none';
+        proCard.style.display = 'none';
+      });
+    });
+  </script>
+</body>
+</html>
